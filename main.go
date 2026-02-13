@@ -17,6 +17,7 @@ func main() {
 	const filepathApp = "/app"
 	const filepathMetrics = "/metrics"
 	const filepathReset = "/reset"
+	const filepathApi = "/api"
 
 	apiCfg := apiConfig{
 		fileserverHits: atomic.Int32{},
@@ -24,9 +25,9 @@ func main() {
 	mux := http.NewServeMux()
 	fsHandler := apiCfg.middlewareMetricsInc(http.StripPrefix(filepathApp, http.FileServer(http.Dir(filepathRoot))))
 	mux.Handle(filepathApp+"/", fsHandler)
-	mux.HandleFunc("GET "+filepathReadiness, handlerReadiness)
-	mux.HandleFunc("GET "+filepathMetrics, apiCfg.handlerMetrics)
-	mux.HandleFunc("POST "+filepathReset, apiCfg.handlerReset)
+	mux.HandleFunc("GET "+filepathApi+filepathReadiness, handlerReadiness)
+	mux.HandleFunc("GET "+filepathApi+filepathMetrics, apiCfg.handlerMetrics)
+	mux.HandleFunc("POST "+filepathApi+filepathReset, apiCfg.handlerReset)
 
 	srv := &http.Server{
 		Addr:    ":" + port,
