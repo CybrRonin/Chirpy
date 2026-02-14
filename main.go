@@ -19,6 +19,7 @@ func main() {
 	const filepathReset = "/reset"
 	const filepathApi = "/api"
 	const filepathAdmin = "/admin"
+	const filepathValidateChirp = "/validate_chirp"
 
 	apiCfg := apiConfig{
 		fileserverHits: atomic.Int32{},
@@ -28,6 +29,7 @@ func main() {
 	mux.Handle(filepathApp+"/", fsHandler)
 
 	mux.HandleFunc("GET "+filepathApi+filepathReadiness, handlerReadiness)
+	mux.HandleFunc("POST "+filepathApi+filepathValidateChirp, handlerValidateChirp)
 
 	mux.HandleFunc("GET "+filepathAdmin+filepathMetrics, apiCfg.handlerMetrics)
 	mux.HandleFunc("POST "+filepathAdmin+filepathReset, apiCfg.handlerReset)
