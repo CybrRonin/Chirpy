@@ -2,9 +2,16 @@ package main
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 )
+
+func decodeJSON(src io.Reader, params any) error {
+	decoder := json.NewDecoder(src)
+
+	return decoder.Decode(params)
+}
 
 func respondWithError(w http.ResponseWriter, code int, msg string, err error) {
 	if err != nil {

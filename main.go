@@ -15,6 +15,7 @@ import (
 type apiConfig struct {
 	fileserverHits atomic.Int32
 	db             *database.Queries
+	platform       string
 }
 
 func main() {
@@ -27,11 +28,17 @@ func main() {
 	const filepathApi = "/api"
 	const filepathAdmin = "/admin"
 	const filepathValidateChirp = "/validate_chirp"
+	const filepathUsers = "/users"
+	const filepathChirps = "/chirps"
 
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
 	if dbURL == "" {
 		log.Fatal("DB_URL must be set")
+	}
+	platform := os.Getenv("PLATFORM")
+	if platform == "" {
+		log.Fatal("PLATFORM must be set")
 	}
 
 	dbConn, err := sql.Open("postgres", dbURL)
@@ -42,13 +49,15 @@ func main() {
 	apiCfg := apiConfig{
 		fileserverHits: atomic.Int32{},
 		db:             database.New(dbConn),
+		platform:       platform,
 	}
 	mux := http.NewServeMux()
 	fsHandler := apiCfg.middlewareMetricsInc(http.StripPrefix(filepathApp, http.FileServer(http.Dir(filepathRoot))))
 	mux.Handle(filepathApp+"/", fsHandler)
 
 	mux.HandleFunc("GET "+filepathApi+filepathReadiness, handlerReadiness)
-	mux.HandleFunc("POST "+filepathApi+filepathValidateChirp, handlerValidateChirp)
+	mux.HandleFunc("POST "+filepathApi+filepathUsers, apiCfg.handlerUsersCreate)
+	mux.HandleFunc("POST "+filepathApi+filepathChirps, apiCfg.handlerChirpsCreate)
 
 	mux.HandleFunc("GET "+filepathAdmin+filepathMetrics, apiCfg.handlerMetrics)
 	mux.HandleFunc("POST "+filepathAdmin+filepathReset, apiCfg.handlerReset)
