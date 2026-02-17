@@ -30,6 +30,7 @@ func main() {
 	const filepathValidateChirp = "/validate_chirp"
 	const filepathUsers = "/users"
 	const filepathChirps = "/chirps"
+	const filepathLogin = "/login"
 
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
@@ -58,6 +59,7 @@ func main() {
 	mux.HandleFunc("GET "+filepathApi+filepathReadiness, handlerReadiness)
 
 	mux.HandleFunc("POST "+filepathApi+filepathUsers, apiCfg.handlerUsersCreate)
+	mux.HandleFunc("POST "+filepathApi+filepathLogin, apiCfg.handlerLogin)
 
 	mux.HandleFunc("POST "+filepathApi+filepathChirps, apiCfg.handlerChirpsCreate)
 	mux.HandleFunc("GET "+filepathApi+filepathChirps, apiCfg.handlerChirpsGetAll)
