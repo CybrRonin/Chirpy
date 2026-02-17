@@ -49,6 +49,21 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, req *http.Reque
 	respondWithJSON(w, http.StatusCreated, chirp)
 }
 
+func (cfg *apiConfig) handlerChirpsGetAll(w http.ResponseWriter, req *http.Request) {
+	resp, err := cfg.db.GetAllChirps(req.Context())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed to retrieve chirps", err)
+		return
+	}
+
+	chirps := []Chirp{}
+	for _, entry := range resp {
+		chirps = append(chirps, mapChirp(entry))
+	}
+
+	respondWithJSON(w, http.StatusOK, chirps)
+}
+
 func mapChirp(ch database.Chirp) Chirp {
 	return Chirp{
 		ID:        ch.ID,

@@ -56,8 +56,11 @@ func main() {
 	mux.Handle(filepathApp+"/", fsHandler)
 
 	mux.HandleFunc("GET "+filepathApi+filepathReadiness, handlerReadiness)
+
 	mux.HandleFunc("POST "+filepathApi+filepathUsers, apiCfg.handlerUsersCreate)
+
 	mux.HandleFunc("POST "+filepathApi+filepathChirps, apiCfg.handlerChirpsCreate)
+	mux.HandleFunc("GET "+filepathApi+filepathChirps, apiCfg.handlerChirpsGetAll)
 
 	mux.HandleFunc("GET "+filepathAdmin+filepathMetrics, apiCfg.handlerMetrics)
 	mux.HandleFunc("POST "+filepathAdmin+filepathReset, apiCfg.handlerReset)

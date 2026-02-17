@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -36,7 +35,6 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, req *http.Reques
 	}
 
 	user := mapUser(u)
-	fmt.Println(user)
 	respondWithJSON(w, http.StatusCreated, user)
 }
 
