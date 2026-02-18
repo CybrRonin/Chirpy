@@ -15,11 +15,14 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at"`
 	Email     string    `json:"email"`
 	Password  string    `json:"-"`
+	Token     string    `json:"token"`
 }
 
 type userParameters struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+
+	ExpiresInSeconds int `json:"expires_in_seconds"`
 }
 
 func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, req *http.Request) {
@@ -52,6 +55,11 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, req *http.Reques
 }
 
 func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, req *http.Request) {
+	const (
+		defaultExpiration = 3600 // number of seconds in an hour
+		defaultDuration   = time.Hour
+	)
+
 	params := userParameters{}
 
 	err := decodeJSON(req.Body, &params)
@@ -72,15 +80,30 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, mapUser(user))
+	duration := defaultDuration
+	if params.ExpiresInSeconds > 0 && params.ExpiresInSeconds < defaultExpiration {
+		duration = time.Duration(params.ExpiresInSeconds) * time.Second
+	}
+
+	token, err := auth.MakeJWT(user.ID, cfg.jwtSecret, duration)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed to generate JWT", err)
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, mapUser(user, token))
 }
 
-func mapUser(user database.User) User {
+func mapUser(user database.User, options ...string) User {
 	newUser := User{
 		ID:        user.ID,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 		Email:     user.Email,
 	}
+	if len(options) > 0 {
+		newUser.Token = options[0]
+	}
+
 	return newUser
 }
