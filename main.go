@@ -77,6 +77,7 @@ func main() {
 	mux.HandleFunc("POST "+filepathApi+filepathChirps, apiCfg.handlerChirpsCreate)
 	mux.HandleFunc("GET "+filepathApi+filepathChirps, apiCfg.handlerChirpsGetAll)
 	mux.HandleFunc("GET "+filepathApi+filepathChirps+"/{chirpID}", apiCfg.handlerChirpsGet)
+	mux.HandleFunc("DELETE "+filepathApi+filepathChirps+"/{chirpID}", apiCfg.handlerChirpsDelete)
 
 	mux.HandleFunc("POST "+filepathApi+filepathRefresh, apiCfg.handlerRefreshTokensRefresh)
 	mux.HandleFunc("POST "+filepathApi+filepathRevoke, apiCfg.handlerRefreshTokensRevoke)
