@@ -71,6 +71,7 @@ func main() {
 	mux.HandleFunc("GET "+filepathApi+filepathReadiness, handlerReadiness)
 
 	mux.HandleFunc("POST "+filepathApi+filepathUsers, apiCfg.handlerUsersCreate)
+	mux.HandleFunc("PUT "+filepathApi+filepathUsers, apiCfg.handlerUsersUpdate)
 	mux.HandleFunc("POST "+filepathApi+filepathLogin, apiCfg.handlerLogin)
 
 	mux.HandleFunc("POST "+filepathApi+filepathChirps, apiCfg.handlerChirpsCreate)

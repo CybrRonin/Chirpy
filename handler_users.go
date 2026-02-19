@@ -103,6 +103,47 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, req *http.Request) {
 	respondWithJSON(w, http.StatusOK, mapUser(user, accessToken, refreshToken))
 }
 
+func (cfg *apiConfig) handlerUsersUpdate(w http.ResponseWriter, req *http.Request) {
+	accessToken, err := auth.GetBearerToken(req.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "couldn't find JWT", err)
+		return
+	}
+
+	accessID, err := auth.ValidateJWT(accessToken, cfg.jwtSecret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "couldn't validate JWT", err)
+		return
+	}
+
+	userParams := userParameters{}
+	err = decodeJSON(req.Body, &userParams)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "unable to decode parameters", err)
+		return
+	}
+
+	hashedPwd, err := auth.HashPassword(userParams.Password)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed to hash password", err)
+		return
+	}
+
+	pwdArgs := database.UpdateUserParams{
+		ID:             accessID,
+		Email:          userParams.Email,
+		HashedPassword: hashedPwd,
+	}
+
+	user, err := cfg.db.UpdateUser(req.Context(), pwdArgs)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "error updating password", err)
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, mapUser(user))
+}
+
 func mapUser(user database.User, options ...string) User {
 	newUser := User{
 		ID:        user.ID,
