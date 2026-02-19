@@ -20,18 +20,22 @@ type apiConfig struct {
 }
 
 func main() {
-	const port = "8080"
-	const filepathRoot = "."
-	const filepathReadiness = "/healthz"
-	const filepathApp = "/app"
-	const filepathMetrics = "/metrics"
-	const filepathReset = "/reset"
-	const filepathApi = "/api"
-	const filepathAdmin = "/admin"
-	const filepathValidateChirp = "/validate_chirp"
-	const filepathUsers = "/users"
-	const filepathChirps = "/chirps"
-	const filepathLogin = "/login"
+	const (
+		port                  = "8080"
+		filepathRoot          = "."
+		filepathReadiness     = "/healthz"
+		filepathApp           = "/app"
+		filepathMetrics       = "/metrics"
+		filepathReset         = "/reset"
+		filepathApi           = "/api"
+		filepathAdmin         = "/admin"
+		filepathValidateChirp = "/validate_chirp"
+		filepathUsers         = "/users"
+		filepathChirps        = "/chirps"
+		filepathLogin         = "/login"
+		filepathRefresh       = "/refresh"
+		filepathRevoke        = "/revoke"
+	)
 
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
@@ -72,6 +76,9 @@ func main() {
 	mux.HandleFunc("POST "+filepathApi+filepathChirps, apiCfg.handlerChirpsCreate)
 	mux.HandleFunc("GET "+filepathApi+filepathChirps, apiCfg.handlerChirpsGetAll)
 	mux.HandleFunc("GET "+filepathApi+filepathChirps+"/{chirpID}", apiCfg.handlerChirpsGet)
+
+	mux.HandleFunc("POST "+filepathApi+filepathRefresh, apiCfg.handlerRefreshTokensRefresh)
+	mux.HandleFunc("POST "+filepathApi+filepathRevoke, apiCfg.handlerRefreshTokensRevoke)
 
 	mux.HandleFunc("GET "+filepathAdmin+filepathMetrics, apiCfg.handlerMetrics)
 	mux.HandleFunc("POST "+filepathAdmin+filepathReset, apiCfg.handlerReset)

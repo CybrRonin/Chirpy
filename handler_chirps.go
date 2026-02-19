@@ -45,7 +45,7 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	cleaned, err := validateChirp(w, reqParams.Body)
+	cleaned, err := validateChirp(reqParams.Body)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid chirp: ", err)
 		return
@@ -106,7 +106,7 @@ func mapChirp(ch database.Chirp) Chirp {
 	}
 }
 
-func validateChirp(w http.ResponseWriter, body string) (string, error) {
+func validateChirp(body string) (string, error) {
 	const maxChirpLength = 140
 	if len(body) > maxChirpLength {
 		return "", errors.New("Chirp is too long")

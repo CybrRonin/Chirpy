@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"net/http"
 	"time"
 
@@ -10,19 +11,19 @@ import (
 )
 
 type User struct {
-	ID        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Email     string    `json:"email"`
-	Password  string    `json:"-"`
-	Token     string    `json:"token"`
+	ID           uuid.UUID    `json:"id"`
+	CreatedAt    time.Time    `json:"created_at"`
+	UpdatedAt    time.Time    `json:"updated_at"`
+	Email        string       `json:"email"`
+	Password     string       `json:"-"`
+	Token        string       `json:"token"`
+	RefreshToken string       `json:"refresh_token"`
+	RevokedAt    sql.NullTime `json:"revoked_at"`
 }
 
 type userParameters struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
-
-	ExpiresInSeconds int `json:"expires_in_seconds"`
 }
 
 func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, req *http.Request) {
@@ -56,8 +57,8 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, req *http.Reques
 
 func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, req *http.Request) {
 	const (
-		defaultExpiration = 3600 // number of seconds in an hour
-		defaultDuration   = time.Hour
+		defaultAccessExpiration  = time.Hour
+		defaultRefreshExpiration = time.Hour * 1440 // 60 days' worth of hours
 	)
 
 	params := userParameters{}
@@ -80,18 +81,26 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	duration := defaultDuration
-	if params.ExpiresInSeconds > 0 && params.ExpiresInSeconds < defaultExpiration {
-		duration = time.Duration(params.ExpiresInSeconds) * time.Second
-	}
-
-	token, err := auth.MakeJWT(user.ID, cfg.jwtSecret, duration)
+	accessToken, err := auth.MakeJWT(user.ID, cfg.jwtSecret, defaultAccessExpiration)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "failed to generate JWT", err)
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, mapUser(user, token))
+	refreshToken := auth.MakeRefreshToken()
+
+	refreshArgs := database.CreateRefreshTokenParams{
+		UserID:    user.ID,
+		Token:     refreshToken,
+		ExpiresAt: time.Now().UTC().Add(defaultRefreshExpiration),
+	}
+	_, err = cfg.db.CreateRefreshToken(req.Context(), refreshArgs)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed to create refresh token entry", err)
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, mapUser(user, accessToken, refreshToken))
 }
 
 func mapUser(user database.User, options ...string) User {
@@ -101,8 +110,11 @@ func mapUser(user database.User, options ...string) User {
 		UpdatedAt: user.UpdatedAt,
 		Email:     user.Email,
 	}
-	if len(options) > 0 {
+
+	if len(options) > 1 {
 		newUser.Token = options[0]
+		newUser.RefreshToken = options[1]
+		//newUser.RevokedAt = sql.NullTime{Valid: false}
 	}
 
 	return newUser
