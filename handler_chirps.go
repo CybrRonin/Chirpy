@@ -65,8 +65,27 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, req *http.Reque
 	respondWithJSON(w, http.StatusCreated, chirp)
 }
 
+func authorIDFromRequest(r *http.Request) (uuid.UUID, error) {
+	authorIDString := r.URL.Query().Get("author_id")
+	if authorIDString == "" {
+		return uuid.Nil, nil
+	}
+	authorID, err := uuid.Parse(authorIDString)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return authorID, nil
+}
+
 func (cfg *apiConfig) handlerChirpsGetAll(w http.ResponseWriter, req *http.Request) {
-	resp, err := cfg.db.GetAllChirps(req.Context())
+	authorID, err := authorIDFromRequest(req)
+	var resp []database.Chirp
+
+	if authorID != uuid.Nil {
+		resp, err = cfg.db.GetChirpsByAuthor(req.Context(), authorID)
+	} else {
+		resp, err = cfg.db.GetAllChirps(req.Context())
+	}
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "failed to retrieve chirps", err)
 		return
