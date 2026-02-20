@@ -17,6 +17,7 @@ type apiConfig struct {
 	db             *database.Queries
 	platform       string
 	jwtSecret      string
+	polkaKey       string
 }
 
 func main() {
@@ -35,6 +36,8 @@ func main() {
 		filepathLogin         = "/login"
 		filepathRefresh       = "/refresh"
 		filepathRevoke        = "/revoke"
+		filepathPolka         = "/polka"
+		filepathWebhooks      = "/webhooks"
 	)
 
 	godotenv.Load()
@@ -57,11 +60,17 @@ func main() {
 		log.Fatal("JWT_SECRET environment variable is not set")
 	}
 
+	polkaKey := os.Getenv("POLKA_KEY")
+	if polkaKey == "" {
+		log.Fatal("POLKA_KEY environment variable is not set")
+	}
+
 	apiCfg := apiConfig{
 		fileserverHits: atomic.Int32{},
 		db:             database.New(dbConn),
 		platform:       platform,
 		jwtSecret:      secret,
+		polkaKey:       polkaKey,
 	}
 
 	mux := http.NewServeMux()
@@ -84,6 +93,8 @@ func main() {
 
 	mux.HandleFunc("GET "+filepathAdmin+filepathMetrics, apiCfg.handlerMetrics)
 	mux.HandleFunc("POST "+filepathAdmin+filepathReset, apiCfg.handlerReset)
+
+	mux.HandleFunc("POST "+filepathApi+filepathPolka+filepathWebhooks, apiCfg.handlerUpgradeUser)
 
 	srv := &http.Server{
 		Addr:    ":" + port,

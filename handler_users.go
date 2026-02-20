@@ -19,6 +19,7 @@ type User struct {
 	Token        string       `json:"token"`
 	RefreshToken string       `json:"refresh_token"`
 	RevokedAt    sql.NullTime `json:"revoked_at"`
+	IsChirpyRed  bool         `json:"is_chirpy_red"`
 }
 
 type userParameters struct {
@@ -146,10 +147,11 @@ func (cfg *apiConfig) handlerUsersUpdate(w http.ResponseWriter, req *http.Reques
 
 func mapUser(user database.User, options ...string) User {
 	newUser := User{
-		ID:        user.ID,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-		Email:     user.Email,
+		ID:          user.ID,
+		CreatedAt:   user.CreatedAt,
+		UpdatedAt:   user.UpdatedAt,
+		Email:       user.Email,
+		IsChirpyRed: user.IsChirpyRed,
 	}
 
 	if len(options) > 1 {
